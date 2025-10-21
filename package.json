@@ -1,0 +1,23 @@
+{
+  "name": "project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"npm run dev --prefix backend\" \"npm start --prefix frontend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/john-raub/cs348-project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/john-raub/cs348-project/issues"
+  },
+  "homepage": "https://github.com/john-raub/cs348-project#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
