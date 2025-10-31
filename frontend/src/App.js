@@ -1,8 +1,27 @@
-import React from "react";
-import AuthPage from "./AuthPage"; // adjust path if different
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import AuthPage from "./AuthPage";
+import ProfilePage from "./ProfilePage";
+import ProtectedRoute from "./ProtectedRoute";
 
 function App() {
-  return <AuthPage />;
+  return (
+    <Router>
+      <Routes>
+        {/* Public Route */}
+        <Route path="/" element={<AuthPage />} />
+
+        {/* Protected Route */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;

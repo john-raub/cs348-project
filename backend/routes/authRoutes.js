@@ -49,4 +49,20 @@ router.post("/login", async (req, res) => {
   }
 });
 
+//verify
+router.get("/verify", (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ message: "Missing token" });
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    res.status(200).json({ valid: true, user: decoded });
+  } catch (err) {
+    console.error("Token verification failed:", err.message);
+    res.status(401).json({ valid: false, message: "Invalid or expired token" });
+  }
+});
+
 export default router;

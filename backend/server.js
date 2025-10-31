@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import Message from "./models/test.js";
 
 dotenv.config();
@@ -20,8 +21,9 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 
-// Test route
+// Test route - need to remove later
 app.get("/", (req, res) => {
   res.send("Hello from the Backend");
 });

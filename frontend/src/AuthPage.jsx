@@ -1,12 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./AuthPage.css";
+import { useNavigate } from "react-router-dom";
+
 
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
-  const [token, setToken] = useState(localStorage.getItem("token") || null);
+  const [token, setToken] = useState(null);
+  const navigate = useNavigate();
+
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -40,15 +44,42 @@ export default function AuthPage() {
     setToken(null);
   };
 
-  if (token) {
-    return (
-      <div className="auth-container">
-        <h2>Welcome!</h2>
-        <p>You are logged in.</p>
-        <button onClick={handleLogout}>Logout</button>
-      </div>
-    );
-  }
+
+useEffect(() => {
+  // Change 2: Verification hook now reads from localStorage directly
+  const storedToken = localStorage.getItem("token");
+  if (!storedToken) return; // No token, do nothing
+
+  const checkToken = async () => {
+    try {
+      const res = await fetch("/api/auth/verify", {
+        headers: { Authorization: `Bearer ${storedToken}` },
+      });
+      console.log("Token verification response:", res);
+      if (res.ok) {
+        // Token is valid! Set it in state.
+        // This will trigger the *other* useEffect to navigate.
+        setToken(storedToken);
+      } else {
+        // Token is invalid, just remove it and stay on the auth page
+        localStorage.removeItem("token");
+      }
+    } catch (err) {
+      // Network error, assume invalid
+      localStorage.removeItem("token");
+    }
+  };
+
+  checkToken();
+}, []); // This empty dependency array is correct, it should only run once on mount
+
+
+  useEffect(() => {
+    if (token) {
+      navigate("/profile");
+    }
+  }, [token, navigate]);
+
 
   return (
     <div className="auth-container">
