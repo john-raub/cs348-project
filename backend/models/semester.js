@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 const semesterSchema = new mongoose.Schema({
   session: { type: String, required: true }, // e.g. "Fall", "Spring"
   year: { type: Number, required: true },

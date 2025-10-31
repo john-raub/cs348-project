@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 const classSchema = new mongoose.Schema({
   classId: { type: String, required: true }, // e.g. "CS180"
   professor: String,

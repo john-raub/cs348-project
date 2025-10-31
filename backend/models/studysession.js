@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 const studySessionSchema = new mongoose.Schema({
   datetime: { type: Date, default: Date.now },
   timeStudying: { type: Number, required: true } // in minutes or hours

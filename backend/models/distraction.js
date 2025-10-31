@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 const distractionSchema = new mongoose.Schema({
   type: { type: String, required: true }, // e.g. "phone", "snack", "social media"
   timeTaken: { type: Number, required: true }, // duration

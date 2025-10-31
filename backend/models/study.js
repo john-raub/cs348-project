@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 const studySchema = new mongoose.Schema({
   what: { type: String, required: true },
   understanding: { type: Number, min: 0, max: 10 }, // rating of comprehension
