@@ -1,0 +1,28 @@
+.edit-records-container {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+select,
+input,
+button {
+  margin-top: 5px;
+  width: 100%;
+  padding: 8px;
+  font-size: 1rem;
+}
+
+.create-section {
+  margin-top: 20px;
+  border-top: 1px solid #ccc;
+  padding-top: 15px;
+}

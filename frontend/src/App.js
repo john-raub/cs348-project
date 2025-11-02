@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AuthPage from "./AuthPage";
 import ProfilePage from "./ProfilePage";
+import EditRecords from "./EditRecords";
 import ProtectedRoute from "./ProtectedRoute";
 
 function App() {
@@ -16,6 +17,16 @@ function App() {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Edit Records Route */}
+        <Route
+          path="/RecordEdit"
+          element={
+            <ProtectedRoute>
+              <EditRecords />
             </ProtectedRoute>
           }
         />

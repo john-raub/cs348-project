@@ -4,6 +4,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import semesterRoutes from "./routes/semesterRoutes.js";
+import classRoutes from "./routes/classRoutes.js";
+import assignmentRoutes from "./routes/assignmentRoutes.js";
 import Message from "./models/test.js";
 
 dotenv.config();
@@ -22,6 +25,9 @@ mongoose.connect(process.env.MONGO_URI)
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/semesters", semesterRoutes);
+app.use("/api/classes", classRoutes);
+app.use("/api/assignments", assignmentRoutes);
 
 // Test route - need to remove later
 app.get("/", (req, res) => {

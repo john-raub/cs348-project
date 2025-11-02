@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const studySessionSchema = new mongoose.Schema({
   datetime: { type: Date, default: Date.now },
-  timeStudying: { type: Number, required: true } // in minutes or hours
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }
 });
 
 const StudySession = mongoose.model("StudySession", studySessionSchema);
