@@ -7,6 +7,9 @@ import userRoutes from "./routes/userRoutes.js";
 import semesterRoutes from "./routes/semesterRoutes.js";
 import classRoutes from "./routes/classRoutes.js";
 import assignmentRoutes from "./routes/assignmentRoutes.js";
+import sessionRoutes from "./routes/sessionRoutes.js";
+import workRoutes from "./routes/workRoutes.js";
+import studyRoutes from "./routes/studyRoutes.js";
 import Message from "./models/test.js";
 
 dotenv.config();
@@ -28,6 +31,9 @@ app.use("/api/user", userRoutes);
 app.use("/api/semesters", semesterRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/assignments", assignmentRoutes);
+app.use("/api/sessions", sessionRoutes);
+app.use("/api/works", workRoutes);
+app.use("/api/study", studyRoutes);
 
 // Test route - need to remove later
 app.get("/", (req, res) => {

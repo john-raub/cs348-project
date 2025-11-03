@@ -2,6 +2,8 @@ import express from "express";
 import auth from "../middleware/auth.js";
 import Assignment from "../models/assignment.js";
 import Class from "../models/class.js";
+import User from "../models/User.js";
+import Semester from "../models/semester.js";
 
 const router = express.Router();
 
@@ -22,6 +24,18 @@ router.get("/getAssignments/:classId", auth, async (req, res) => {
   }
 });
 
+router.get("/getUserAssignments", auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const semesters = await Semester.find({ user: userId });
+    const classes = await Class.find({ semester: { $in: semesters.map(s => s._id) } });
+    const assignments = await Assignment.find({ class: { $in: classes.map(c => c._id) } }).populate('class');
+    res.json(assignments);
+  } catch (error) {
+    console.error("Error fetching user assignments:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 router.post("/createAssignment", auth, async (req, res) => {
   try {

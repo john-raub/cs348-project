@@ -16,6 +16,22 @@ export default function EditRecords() {
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [assignmentEditForm, setAssignmentEditForm] = useState({ title: "" });
   const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [userSessions, setUserSessions] = useState([]);
+  const [newSession, setNewSession] = useState({ title: "", datetime: "" });
+  const [editingSession, setEditingSession] = useState(null);
+  const [sessionEditForm, setSessionEditForm] = useState({ title: "", datetime: "" });
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [allAssignments, setAllAssignments] = useState([]);
+  const [allSessionWork, setAllSessionWork] = useState([]);
+  const [workEditForm, setWorkEditForm] = useState({ time: "" });
+  const [editingWork, setEditingWork] = useState(null);
+  const [newWork, setNewWork] = useState({ assignmentId: "", time: "" });
+  const [selectedWork, setselectedWork] = useState(null);
+  const [allSessionStudy, setAllSessionStudy] = useState([]);
+  const [newStudy, setNewStudy] = useState({ what: "", understanding: "", time: "" });
+  const [editingStudy, setEditingStudy] = useState(null);
+  const [studyEditForm, setStudyEditForm] = useState({ what: "", understanding: "", time: "" });
+  const [selectedStudy, setSelectedStudy] = useState(null);
 
   // Fetch semesters on mount
   useEffect(() => {
@@ -77,6 +93,84 @@ export default function EditRecords() {
     fetchAssignments();
   }, [selectedClass]);
 
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const res = await fetch(`/api/sessions/getUserSessions`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const data = await res.json();
+        setUserSessions(data);
+      } catch (err) {
+        console.error("Error fetching sessions:", err);
+      }
+    };
+    fetchSessions();
+  }, []);
+
+  useEffect(() => {
+    const fetchSessionWork = async () => {
+      if (!selectedSession) {
+        setAllSessionWork([]);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/works/getSessionWorks/${selectedSession._id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const data = await res.json();
+        setAllSessionWork(data);
+      } catch (err) {
+        console.error("Error fetching session work:", err);
+      }
+    };
+    fetchSessionWork();
+  }, [selectedSession]);
+
+  useEffect(() => {
+    const fetchAllAssignments = async () => {
+      try {
+        const res = await fetch(`/api/assignments/getUserAssignments`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const data = await res.json();
+        setAllAssignments(data);
+      } catch (err) {
+        console.error("Error fetching all assignments:", err);
+      }
+    };
+    fetchAllAssignments();
+  }, []);
+
+  useEffect(() => {
+    const fetchAllStudy = async () => {
+      if (!selectedSession) {
+        setAllSessionStudy([]);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/study/getStudies/${selectedSession._id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const data = await res.json();
+        setAllSessionStudy(data);
+      } catch (err) {
+        console.error("Error fetching all study:", err);
+      }
+    };
+    fetchAllStudy();
+  }, [selectedSession]);
+
+
   const handleSelectSemester = (id) => {
     const semester = userSemesters.find((s) => s._id === id);
     setSelectedSemester(semester);
@@ -93,6 +187,24 @@ export default function EditRecords() {
     const assignment = classAssignments.find((a) => a._id === id);
     setSelectedAssignment(assignment);
     setEditingAssignment(null);
+  };
+
+  const handleSelectSession = (id) => {
+    const session = userSessions.find((s) => s._id === id);
+    setSelectedSession(session);
+    setEditingSession(null);
+  }
+
+  const handleSelectWork = (id) => {
+    const work = allSessionWork.find((w) => w._id === id);
+    setselectedWork(work);
+    setEditingWork(null);
+  };
+
+  const handleSelectStudy = (id) => {
+    const study = allSessionStudy.find((s) => s._id === id);
+    setSelectedStudy(study);
+    setEditingStudy(null);
   };
 
   const handleCreateSemester = async () => {
@@ -149,6 +261,75 @@ export default function EditRecords() {
     }
   };
 
+    const handleCreateSession = async () => {
+    try {
+      const res = await fetch("/api/sessions/createSession", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(newSession),
+      });
+      const data = await res.json();
+      setUserSessions([...userSessions, data]);
+      setNewSession({ title: "", datetime: "" });
+    } catch (err) {
+      console.error("Error creating session:", err);
+    }
+  };
+
+  const handleCreateWork = async () => {
+    try {
+      const res = await fetch("/api/works/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ ...newWork, sessionId: selectedSession._id }),
+      });
+      const data = await res.json();
+      setNewWork({ assignmentId: "", time: "" });
+    } catch (err) {
+      console.error("Error creating work:", err);
+    }
+
+    if (!selectedSession) {
+        setAllSessionWork([]);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/works/getSessionWorks/${selectedSession._id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const data = await res.json();
+        setAllSessionWork(data);
+      } catch (err) {
+        console.error("Error fetching session work:", err);
+      }
+  };
+
+  const handleCreateStudy = async () => {
+    try {
+      const res = await fetch("/api/study/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ ...newStudy, session: selectedSession._id }),
+      });
+      const data = await res.json();
+      setAllSessionStudy([...allSessionStudy, data]);
+      setNewStudy({ what: "", understanding: "", time: "" });
+    } catch (err) {
+      console.error("Error creating study:", err);
+    }
+  };
+
   const handleDeleteSemester = async (id) => {
     try {
       await fetch(`/api/semesters/delete/${id}`, {
@@ -188,6 +369,45 @@ export default function EditRecords() {
     }
   };
 
+  const handleDeleteSession = async (id) => {
+    try {
+      await fetch(`/api/sessions/deleteSession/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setUserSessions(userSessions.filter((s) => s._id !== id));
+      if (selectedSession?._id === id) setSelectedSession(null);
+    } catch (err) {
+      console.error("Error deleting session:", err);
+    }
+  };
+
+  const handleDeleteWork = async (id) => {
+    try {
+      await fetch(`/api/works/delete/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setAllSessionWork(allSessionWork.filter((w) => w._id !== id));
+      if (selectedWork === id) setselectedWork(null);
+    } catch (err) {
+      console.error("Error deleting work:", err);
+    }
+  };
+
+  const handleDeleteStudy = async (id) => {
+    try {
+      await fetch(`/api/study/delete/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setAllSessionStudy(allSessionStudy.filter((s) => s._id !== id));
+      if (selectedStudy?._id === id) setSelectedStudy(null);
+    } catch (err) {
+      console.error("Error deleting study:", err);
+    }
+  };
+
   const handleEditSemester = (semester) => {
     setEditingSemester(semester._id);
     setSemesterEditForm({ year: semester.year, season: semester.season });
@@ -202,6 +422,21 @@ export default function EditRecords() {
     setEditingAssignment(assignment._id);
     setAssignmentEditForm({ title: assignment.title });
   }
+
+  const handleEditSession = (session) => {
+    setEditingSession(session._id);
+    setSessionEditForm({ title: session.title, datetime: session.datetime });
+  };
+
+  const handleEditWork = (work) => { 
+    setEditingWork(work._id);
+    setWorkEditForm({ time: work.time });
+  };
+
+  const handleEditStudy = (study) => {
+    setEditingStudy(study._id);
+    setStudyEditForm({ what: study.what, understanding: study.understanding, time: study.time });
+  };
 
   const handleSaveSemesterEdit = async (id) => {
     try {
@@ -254,6 +489,75 @@ export default function EditRecords() {
       setEditingAssignment(null);
     } catch (err) {
       console.error("Error updating assignment:", err);
+    }
+  };
+
+  const handleSaveSessionEdit = async (id) => {
+    try {
+      const res = await fetch(`/api/sessions/updateSession/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(sessionEditForm),
+      });
+      const updated = await res.json();
+      setUserSessions(userSessions.map((s) => (s._id === id ? updated : s)));
+      setEditingSession(null);
+    } catch (err) {
+      console.error("Error updating session:", err);
+    }
+  };
+
+  const handleSaveWorkEdit = async (id) => {
+    try {
+      const res = await fetch(`/api/works/update/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(workEditForm),
+      });
+      const updated = await res.json();
+      setEditingWork(null);
+    } catch (err) {
+      console.error("Error updating work:", err);
+    }
+
+    if (!selectedSession) {
+        setAllSessionWork([]);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/works/getSessionWorks/${selectedSession._id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const data = await res.json();
+        setAllSessionWork(data);
+      } catch (err) {
+        console.error("Error fetching session work:", err);
+      }
+  };
+
+  const handleSaveStudyEdit = async (id) => {
+    try {
+      const res = await fetch(`/api/study/update/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(studyEditForm),
+      });
+      const updated = await res.json();
+      setAllSessionStudy(allSessionStudy.map((s) => (s._id === id ? updated : s)));
+      setEditingStudy(null);
+    } catch (err) {
+      console.error("Error updating study:", err);
     }
   };
 
@@ -512,6 +816,262 @@ export default function EditRecords() {
         </div>
       )}
       </div>
+      <div className="sessions-section">
+      <h2>Study Sessions</h2>
+      <select
+        value={selectedSession?._id || ""}
+        onChange={(e) => handleSelectSession(e.target.value)}
+      >
+        <option value="">Select a session</option>
+        {userSessions.map((session) => (
+          <option key={session._id} value={session._id}>
+            {session.title} {session.datetime.slice(0,10)}
+          </option>
+        ))}
+      </select>
+      {/* Inline editing for sessions */}
+      {selectedSession && (
+        <div>
+          <label>
+            Title:
+            <input
+              type="text"
+              value={sessionEditForm.title}
+              onChange={(e) =>
+                setSessionEditForm({ ...sessionEditForm, title: e.target.value })
+              }
+            />
+          </label>
+          <label>
+            Date:
+            <input
+              type="date"
+              value={sessionEditForm.datetime}
+              onChange={(e) =>
+                setSessionEditForm({ ...sessionEditForm, datetime: e.target.value })
+              }
+            />
+          </label>
+          <button onClick={() => handleSaveSessionEdit(selectedSession._id)}>
+            Save
+          </button>
+          <button onClick={() => handleDeleteSession(selectedSession._id)}>
+            Delete selected session
+          </button>
+          <button onClick={() => setEditingSession(null)}>Cancel</button>
+        </div>
+      )}
+      {/* Create new session */}
+      <div>
+        <h3>Create New Study Session</h3>
+        <label>
+          Title:
+          <input
+            type="text"
+            value={newSession.title}
+            onChange={(e) =>
+              setNewSession({ ...newSession, title: e.target.value })
+            }
+          />
+        </label>
+        <label>
+          Date:
+          <input
+            type="date"
+            value={newSession.datetime}
+            onChange={(e) =>
+              setNewSession({ ...newSession, datetime: e.target.value })
+            }
+          />
+        </label>
+        <button onClick={handleCreateSession}>Add Session</button>
+      </div>
     </div>
+
+    <div className="work-section">
+      <h2>Work for Selected Session</h2>
+      {selectedSession === null ? (
+        <p>Please select a session to view its work.</p>
+      ) : (
+        <div>
+          <h3>Existing Work</h3>
+          {allSessionWork.length === 0 ? (
+            <p>No work found for this session.</p>
+          ) : (
+            <div>
+              <select
+                value={selectedWork?._id || ""}
+                onChange={(e) => handleSelectWork(e.target.value)}
+              >
+                <option value="">Select a work item</option>
+                {allSessionWork.map((work) => (
+                  <option key={work._id} value={work._id}>
+                    {work.time} minutes - {work.assignment.title}
+                  </option>
+                ))}
+              </select>
+              <button onClick={() => handleDeleteWork(selectedWork._id)}>
+                Delete selected work
+              </button>
+              <button onClick={() => setEditingWork(selectedWork._id)}>Edit selected work</button>
+            </div>    
+          )}
+          <h3>Create New Work</h3>
+          <label>
+            Minutes Spent:
+            <input
+              type="number"
+              value={newWork.time}
+              onChange={(e) =>
+                setNewWork({ ...newWork, time: e.target.value })
+              }
+            />
+          </label>
+          <label>
+            assignment:
+            <select
+              value={newWork.assignmentId}
+              onChange={(e) =>
+                setNewWork({ ...newWork, assignmentId: e.target.value })
+              }
+            >
+              <option value="">Select an assignment</option>
+              {allAssignments.map((assignment) => (
+                <option key={assignment._id} value={assignment._id}>
+                  {assignment.title} - {assignment.class.classId}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button onClick={handleCreateWork}>Add Work</button>
+        </div>
+      )}
+
+      <div className="edit-work">
+      {editingWork && (
+        <div>
+          <h3>Edit Work</h3>
+          <label>
+            Minutes Spent:
+            <input
+              type="number"
+              value={workEditForm.time}
+              onChange={(e) =>
+                setWorkEditForm({ ...workEditForm, time: e.target.value })
+              }
+            />
+          </label>
+          <button onClick={() => handleSaveWorkEdit(selectedWork._id)}>
+            Save
+          </button>
+          <button onClick={() => setEditingWork(null)}>Cancel</button>
+        </div>
+      )}
+      </div>
+      </div>
+    <div className="study-section">
+      <h2>Study Records for Selected Session</h2>
+      {selectedSession === null ? (
+        <p>Please select a session to view its study records.</p>
+      ) : (
+        <div>
+          <h3>Existing Study Records</h3>
+          {allSessionStudy.length === 0 ? (
+            <p>No study records found for this session.</p>
+          ) : (
+            <select
+              value={selectedStudy?._id || ""}
+              onChange={(e) => handleSelectStudy(e.target.value)}
+            >
+              <option value="">Select a study record</option>
+              {allSessionStudy.map((study) => (
+                <option key={study._id} value={study._id}>
+                  {study.what} - {study.understanding} - {study.time} minutes
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
+      {/* Create new study record */}
+      <div>
+        <h3>Create New Study Record</h3>
+        <label>
+          What I Studied:
+          <input
+            type="text"
+            value={newStudy.what}
+            onChange={(e) =>
+              setNewStudy({ ...newStudy, what: e.target.value })
+            }
+          />
+        </label>
+        <label>
+          Understanding Level:
+          <input
+            type="number"
+            value={newStudy.understanding}
+            onChange={(e) =>
+              setNewStudy({ ...newStudy, understanding: e.target.value })
+            }
+          />
+        </label>
+        <label>
+          Time Spent (minutes):
+          <input
+            type="number"
+            value={newStudy.time}
+            onChange={(e) =>
+              setNewStudy({ ...newStudy, time: e.target.value })
+            }
+          />
+        </label>
+        <button onClick={handleCreateStudy}>Add Study Record</button>
+        </div>
+        {/* Inline editing for study records */}
+        {selectedStudy && (
+          <div>
+            <h3>Edit Study Record</h3>
+            <label>
+              What I Studied:
+              <input
+                type="text"
+                value={studyEditForm.what}
+                onChange={(e) =>
+                  setStudyEditForm({ ...studyEditForm, what: e.target.value })
+                }
+              />
+            </label>
+            <label>
+              Understanding Level:
+              <input
+                type="number"
+                value={studyEditForm.understanding}
+                onChange={(e) =>
+                  setStudyEditForm({ ...studyEditForm, understanding: e.target.value })
+                }
+              />
+            </label>
+            <label>
+              Time Spent (minutes):
+              <input
+                type="number"
+                value={studyEditForm.time}
+                onChange={(e) =>
+                  setStudyEditForm({ ...studyEditForm, time: e.target.value })
+                }
+              />
+            </label>
+            <button onClick={() => handleSaveStudyEdit(selectedStudy._id)}>
+              Save
+            </button>
+            <button onClick={() => handleDeleteStudy(selectedStudy._id)}>
+              Delete selected study record
+            </button>
+            <button onClick={() => setSelectedStudy(null)}>Cancel</button>
+          </div>
+        )}
+        </div>
+      </div>
   );
 }
