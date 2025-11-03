@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function EditRecords() {
   const [userSemesters, setUserSemesters] = useState([]);
@@ -32,6 +33,12 @@ export default function EditRecords() {
   const [editingStudy, setEditingStudy] = useState(null);
   const [studyEditForm, setStudyEditForm] = useState({ what: "", understanding: "", time: "" });
   const [selectedStudy, setSelectedStudy] = useState(null);
+  const [allSessionDistractions, setAllSessionDistractions] = useState([]);
+  const [newDistraction, setNewDistraction] = useState({ type: "", timeTaken: "" });
+  const [editingDistraction, setEditingDistraction] = useState(null);
+  const [distractionEditForm, setDistractionEditForm] = useState({ type: "", timeTaken: "" });
+  const [selectedDistraction, setSelectedDistraction] = useState(null);
+  const navigate = useNavigate();
 
   // Fetch semesters on mount
   useEffect(() => {
@@ -170,6 +177,26 @@ export default function EditRecords() {
     fetchAllStudy();
   }, [selectedSession]);
 
+  useEffect(() => {
+    const fetchAllDistractions = async () => {
+      if (!selectedSession) {
+        setAllSessionDistractions([]);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/distractions/getDistractions/${selectedSession._id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const data = await res.json();
+        setAllSessionDistractions(data);
+      } catch (err) {
+        console.error("Error fetching all distractions:", err);
+      }
+    };
+    fetchAllDistractions();
+  }, [selectedSession]);
 
   const handleSelectSemester = (id) => {
     const semester = userSemesters.find((s) => s._id === id);
@@ -205,6 +232,12 @@ export default function EditRecords() {
     const study = allSessionStudy.find((s) => s._id === id);
     setSelectedStudy(study);
     setEditingStudy(null);
+  };
+
+  const handleSelectDistraction = (id) => {
+    const distraction = allSessionDistractions.find((d) => d._id === id);
+    setSelectedDistraction(distraction);
+    setEditingDistraction(null);
   };
 
   const handleCreateSemester = async () => {
@@ -330,6 +363,24 @@ export default function EditRecords() {
     }
   };
 
+  const handleCreateDistraction = async () => {
+    try {
+      const res = await fetch("/api/distractions/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ ...newDistraction, session: selectedSession._id }),
+      });
+      const data = await res.json();
+      setAllSessionDistractions([...allSessionDistractions, data]);
+      setNewDistraction({ type: "", timeTaken: "" });
+    } catch (err) {
+      console.error("Error creating distraction:", err);
+    }
+  };
+
   const handleDeleteSemester = async (id) => {
     try {
       await fetch(`/api/semesters/delete/${id}`, {
@@ -408,6 +459,19 @@ export default function EditRecords() {
     }
   };
 
+  const handleDeleteDistraction = async (id) => {
+    try {
+      await fetch(`/api/distractions/delete/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setAllSessionDistractions(allSessionDistractions.filter((d) => d._id !== id));
+      if (selectedDistraction?._id === id) setSelectedDistraction(null);
+    } catch (err) {
+      console.error("Error deleting distraction:", err);
+    }
+  };
+
   const handleEditSemester = (semester) => {
     setEditingSemester(semester._id);
     setSemesterEditForm({ year: semester.year, season: semester.season });
@@ -436,6 +500,11 @@ export default function EditRecords() {
   const handleEditStudy = (study) => {
     setEditingStudy(study._id);
     setStudyEditForm({ what: study.what, understanding: study.understanding, time: study.time });
+  };
+
+  const handleEditDistraction = (distraction) => {
+    setEditingDistraction(distraction._id);
+    setDistractionEditForm({ type: distraction.type, timeTaken: distraction.timeTaken });
   };
 
   const handleSaveSemesterEdit = async (id) => {
@@ -561,7 +630,27 @@ export default function EditRecords() {
     }
   };
 
+  const handleSaveDistractionEdit = async (id) => {
+    try {
+      const res = await fetch(`/api/distractions/update/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(distractionEditForm),
+      });
+      const updated = await res.json();
+      setAllSessionDistractions(allSessionDistractions.map((d) => (d._id === id ? updated : d)));
+      setEditingDistraction(null);
+    } catch (err) {
+      console.error("Error updating distraction:", err);
+    }
+  };
+
   return (
+    <div>
+    <button onClick={() => navigate("/profile")}>back</button>
     <div className="semester-manager">
       <h2>Manage Semesters</h2>
 
@@ -1072,6 +1161,95 @@ export default function EditRecords() {
           </div>
         )}
         </div>
+        <div className="distraction-section">
+          <h2>Distractions for Selected Session</h2>
+          {selectedSession === null ? (
+            <p>Please select a session to view its distractions.</p>
+          ) : (
+            <div>
+              <h3>Existing Distractions</h3>
+              {allSessionDistractions.length === 0 ? (
+                <p>No distractions found for this session.</p>
+              ) : (
+                <div>
+                <select
+                  value={selectedDistraction?._id || ""}
+                  onChange={(e) => handleSelectDistraction(e.target.value)}
+                >
+                  <option value="">Select a distraction</option>
+                  {allSessionDistractions.map((distraction) => (
+                    <option key={distraction._id} value={distraction._id}>
+                      {distraction.type} - {distraction.timeTaken} minutes
+                    </option>
+                  ))}
+                </select>
+                <button onClick={() => handleDeleteDistraction(selectedDistraction._id)}>
+                  Delete selected distraction
+                </button>
+                <button onClick={() => setEditingDistraction(selectedDistraction._id)}>Edit selected distraction</button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        {/* Create new distraction */}
+        {selectedSession && (
+          <div>
+            <h3>Create New Distraction</h3>
+            <label>
+              Distraction Type:
+              <input
+                type="text"
+                value={newDistraction.type}
+                onChange={(e) =>
+                  setNewDistraction({ ...newDistraction, type: e.target.value })
+                }
+              />
+            </label>
+            <label>
+              Time Taken (minutes):
+              <input
+                type="number"
+                value={newDistraction.timeTaken}
+                onChange={(e) =>
+                  setNewDistraction({ ...newDistraction, timeTaken: e.target.value })
+                }
+              />
+            </label>
+            <button onClick={handleCreateDistraction}>Add Distraction</button>
+          </div>
+        )}
+        {/* Inline editing for distractions */}
+        {editingDistraction && (
+          <div>
+            <h3>Edit Distraction</h3>
+            <label>
+              Distraction Type:
+              <input
+                type="text"
+                value={distractionEditForm.type}
+                onChange={(e) =>
+                  setDistractionEditForm({ ...distractionEditForm , type: e.target.value })
+                }
+              />
+            </label>
+            <label>
+              Time Taken (minutes):
+              <input
+                type="number"
+                value={distractionEditForm.timeTaken}
+                onChange={(e) =>
+                  setDistractionEditForm({ ...distractionEditForm, timeTaken: e.target.value })
+                }
+              />
+            </label>
+            <button onClick={() => handleSaveDistractionEdit(selectedDistraction._id)}>
+              Save
+            </button>
+            <button onClick={() => setEditingDistraction(null)}>Cancel</button>
+          </div>
+        )}
+      </div>
       </div>
   );
 }
