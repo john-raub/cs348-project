@@ -153,7 +153,7 @@ export default function EditRecords() {
       }
     };
     fetchAllAssignments();
-  }, []);
+  }, [classAssignments]);
 
   useEffect(() => {
     const fetchAllStudy = async () => {

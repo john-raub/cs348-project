@@ -11,6 +11,7 @@ import sessionRoutes from "./routes/sessionRoutes.js";
 import workRoutes from "./routes/workRoutes.js";
 import studyRoutes from "./routes/studyRoutes.js";
 import distractionRoutes from "./routes/distractionRoutes.js";
+import recordRoutes from "./routes/recordRoutes.js";
 import Message from "./models/test.js";
 
 dotenv.config();
@@ -36,6 +37,7 @@ app.use("/api/sessions", sessionRoutes);
 app.use("/api/works", workRoutes);
 app.use("/api/study", studyRoutes);
 app.use("/api/distractions", distractionRoutes);
+app.use("/api/records", recordRoutes);
 
 // Test route - need to remove later
 app.get("/", (req, res) => {

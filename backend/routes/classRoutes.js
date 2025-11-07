@@ -1,6 +1,7 @@
 import express from "express";
 import auth from "../middleware/auth.js";
 import Class from "../models/class.js";
+import Semester from "../models/semester.js";
 
 const router = express.Router();
 
@@ -12,6 +13,18 @@ router.get("/getClasses/:semesterId", auth, async (req, res) => {
     res.json(classes);
   } catch (error) {
     console.error("Error fetching classes:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/getUserClasses", auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const semesters = await Semester.find({ user: userId });
+    const classes = await Class.find({ semester: { $in: semesters.map(s => s._id) } });
+    res.json(classes);
+  } catch (error) {
+    console.error("Error fetching user classes:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AuthPage from "./AuthPage";
 import ProfilePage from "./ProfilePage";
 import EditRecords from "./EditRecords";
+import RecordView from "./ViewRecords";
 import ProtectedRoute from "./ProtectedRoute";
 
 function App() {
@@ -27,6 +28,16 @@ function App() {
           element={
             <ProtectedRoute>
               <EditRecords />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* view Records Route */}
+        <Route
+          path="/RecordView"
+          element={
+            <ProtectedRoute>
+              <RecordView />
             </ProtectedRoute>
           }
         />

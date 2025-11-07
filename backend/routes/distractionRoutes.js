@@ -1,6 +1,10 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
 import Distraction from '../models/distraction.js';
+import StudySession from '../models/studysession.js';
+import mongoose from 'mongoose';
+import { Types } from 'mongoose';
+const { ObjectId } = Types;
 
 const router = express.Router();
 
@@ -17,6 +21,31 @@ router.get('/getDistractions/:sessionId', auth, async (req, res) => {
   }
 });
 
+router.get('/getUserDistractionTypes', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const types = await Distraction.aggregate([
+      {
+        $lookup: {
+          from: 'studysessions',
+          localField: 'session',
+          foreignField: '_id',
+          as: 'session'
+        }
+      },
+      { $unwind: '$session' },
+      { $match: { 'session.user': new ObjectId(userId) } },
+      { $group: { _id: '$type' } }, // group by distinct type field
+      { $project: { _id: 0, type: '$_id' } } // rename _id -> type
+    ]);
+
+    res.json(types.map(t => t.type));
+  } catch (error) {
+    console.error('Error fetching distinct distraction types:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 /**
  * Create a new distraction entry
