@@ -90,7 +90,21 @@ router.post("/getFilteredRecords", auth, async (req, res) => {
 
         const filter_pipeline = [];
 
-        if (filterClass)
+        if (filterClass && filterAssignment) {
+        const classIds = selectedClasses.map(c => new ObjectId(c._id));
+        const assignmentIds = selectedAssignments.map(a => new ObjectId(a._id));
+
+        filter_pipeline.push({
+            $match: {
+            $and: [
+                { "assignmentworks.assignment.class._id": { $in: classIds } },
+                { "assignmentworks.assignment._id": { $in: assignmentIds } }
+            ]
+            }
+        });
+        }
+
+        else if (filterClass)
         {
             const classIds = selectedClasses.map(c => new ObjectId(c._id));
             filter_pipeline.push(
@@ -100,7 +114,7 @@ router.post("/getFilteredRecords", auth, async (req, res) => {
             );
         }
 
-        if (filterAssignment)
+        else if (filterAssignment)
         {
             const assignmentIds = selectedAssignments.map(a => new ObjectId(a._id));
             filter_pipeline.push(
