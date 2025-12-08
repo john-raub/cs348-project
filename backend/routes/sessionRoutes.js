@@ -1,6 +1,7 @@
 import express from "express";
 import auth from "../middleware/auth.js";
 import StudySession from "../models/studysession.js";
+import { sanitizeString } from "../middleware/sanitize.js";
 
 const router = express.Router();
 
@@ -53,8 +54,8 @@ router.put("/updateSession/:id", auth, async (req, res) => {
       { _id: id, user: userId }
     );
 
-    if (title) foundSession.title = title;
-    if (datetime) foundSession.datetime = datetime;
+    if (title) foundSession.title = sanitizeString(title, 200);
+    if (datetime) foundSession.datetime = new Date(datetime);
 
     const updatedSession = await foundSession.save();
 

@@ -23,7 +23,7 @@ router.put("/me", auth, async (req, res) => {
     // Find user by the ID in their token
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { startYear, school },
+      { $set: { startYear, school } },
       { new: true, runValidators: true }
     ).select("-password");
 

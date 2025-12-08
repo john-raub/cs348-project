@@ -1,6 +1,7 @@
 import express from "express";
 import auth from "../middleware/auth.js";
 import Study from "../models/study.js";
+import { sanitizeString } from "../middleware/sanitize.js";
 
 const router = express.Router();
 
@@ -42,9 +43,9 @@ router.put("/update/:id", auth, async (req, res) => {
     const { what, understanding, time } = req.body;
     const updatedStudy = await Study.findById(id);
 
-    if (what) updatedStudy.what = what;
-    if (understanding) updatedStudy.understanding = understanding;
-    if (time) updatedStudy.time = time;
+    if (what) updatedStudy.what = sanitizeString(what, 200);
+    if (understanding) updatedStudy.understanding = Number(understanding);
+    if (time) updatedStudy.time = Number(time);
     await updatedStudy.save();
     res.json(updatedStudy);
   } catch (err) {

@@ -46,7 +46,7 @@ router.put("/update/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const { time } = req.body;
-    const assignment = await AssignmentWork.findByIdAndUpdate(id, { time }, { new: true });
+    const assignment = await AssignmentWork.findByIdAndUpdate(id, {$set: { time } }, { new: true, runValidators: true });
     if (!assignment) return res.status(404).json({ message: "Work not found" });
     res.json(assignment);
   } catch (error) {
