@@ -1,3 +1,5 @@
+//this is legacy code now
+
 const pipeline = [
   ...join_pipeline,
   ...filter_pipeline,

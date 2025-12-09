@@ -1,6 +1,7 @@
 import express from "express";
 import auth from "../middleware/auth.js";
 import Semester from "../models/semester.js";
+import { sanitizeString } from "../middleware/sanitize.js"
 
 const router = express.Router();
 
@@ -78,8 +79,8 @@ router.put("/updateSemester/:id", auth, async (req, res) => {
     }
 
     // update fields
-    if (year) semester.year = year;
-    if (season) semester.season = season;
+    if (year) semester.year = Number(year);
+    if (season) semester.season =  sanitizeString(season, 20);
 
     const updatedSemester = await semester.save();
     res.json(updatedSemester);

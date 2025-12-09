@@ -4,6 +4,7 @@ import Assignment from "../models/assignment.js";
 import Class from "../models/class.js";
 import User from "../models/User.js";
 import Semester from "../models/semester.js";
+import { sanitizeString } from "../middleware/sanitize.js";
 
 const router = express.Router();
 
@@ -65,7 +66,7 @@ router.put("/updateAssignment/:id", auth, async (req, res) => {
 
     const updated = await Assignment.findByIdAndUpdate(
       id,
-      { title },
+      { title: sanitizeString(title, 100) },
       { new: true }
     );
 

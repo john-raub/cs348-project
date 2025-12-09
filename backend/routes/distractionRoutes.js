@@ -4,6 +4,7 @@ import Distraction from '../models/distraction.js';
 import StudySession from '../models/studysession.js';
 import mongoose from 'mongoose';
 import { Types } from 'mongoose';
+import { sanitizeString } from '../middleware/sanitize.js';
 const { ObjectId } = Types;
 
 const router = express.Router();
@@ -85,8 +86,8 @@ router.put('/update/:id', auth, async (req, res) => {
     const { id } = req.params;
     const { type, timeTaken } = req.body;
     const foundDistraction = await Distraction.findById(id);
-    if (type) foundDistraction.type = type;
-    if (timeTaken) foundDistraction.timeTaken = timeTaken;
+    if (type) foundDistraction.type = sanitizeString(type, 50);
+    if (timeTaken) foundDistraction.timeTaken = Number(timeTaken);
     const updatedDistraction =  await foundDistraction.save();
     res.json(updatedDistraction);
   } catch (error) {

@@ -2,6 +2,7 @@ import express from "express";
 import auth from "../middleware/auth.js";
 import Class from "../models/class.js";
 import Semester from "../models/semester.js";
+import { sanitizeString } from "../middleware/sanitize.js";
 
 const router = express.Router();
 
@@ -59,9 +60,9 @@ router.put("/updateClass/:id", auth, async (req, res) => {
     const foundClass = await Class.findOne({ _id: id });
     if (!foundClass) return res.status(404).json({ message: "Class not found or unauthorized" });
 
-    if (classId) foundClass.classId = classId;
-    if (professor) foundClass.professor = professor;
-    if (grade) foundClass.grade = grade;
+    if (classId) foundClass.classId = sanitizeString(classId, 50);
+    if (professor) foundClass.professor = sanitizeString(professor, 50);
+    if (grade) foundClass.grade = sanitizeString(grade, 10);
 
     const updated = await foundClass.save();
     res.json(updated);
