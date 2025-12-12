@@ -14,5 +14,7 @@ assignmentSchema.pre("findOneAndDelete", async function (next) {
   next();
 });
 
+assignmentSchema.index({class:1});
+
 const Assignment = mongoose.model("Assignment", assignmentSchema);
 export default Assignment;

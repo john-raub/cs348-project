@@ -21,5 +21,7 @@ userSchema.pre("findOneAndDelete", async function (next) {
   next();
 });
 
+userSchema.index({ username: 1 });
+
 const User = mongoose.model("User", userSchema);
 export default User;

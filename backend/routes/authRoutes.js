@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { sanitizeString } from "../middleware/sanitize.js";
 
 const router = express.Router();
 
@@ -11,14 +12,14 @@ router.post("/register", async (req, res) => {
     const { username, password, startYear, school } = req.body;
 
     // Check if user exists
-    const existingUser = await User.findOne({ username });
+    const existingUser = await User.findOne({ username: sanitizeString(username, 50) });
     if (existingUser) return res.status(400).json({ error: "Username already exists" });
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const newUser = new User({ username, password: hashedPassword, startYear, school });
+    const newUser = new User({ username: sanitizeString(username, 50), password: hashedPassword, startYear, school });
     await newUser.save();
 
     // JWT
@@ -35,7 +36,7 @@ router.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    const user = await User.findOne({ username }).select("+password");
+    const user = await User.findOne({ username: sanitizeString(username, 50) }).select("+password");
     if (!user) return res.status(400).json({ error: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);

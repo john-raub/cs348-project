@@ -18,5 +18,8 @@ classSchema.pre("findOneAndDelete", async function (next) {
   next();
 });
 
+classSchema.index({classId: 1});
+classSchema.index({semester: 1});
+
 const Class = mongoose.model("Class", classSchema);
 export default Class;

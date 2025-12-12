@@ -20,6 +20,7 @@ semesterSchema.pre("findOneAndDelete", async function (next) {
   next();
 });
 
+semesterSchema.index({user: 1});
 
 const Semester = mongoose.model("Semester", semesterSchema);
 export default Semester;

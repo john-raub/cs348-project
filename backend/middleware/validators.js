@@ -98,8 +98,11 @@ export function validateBody(schema) {
       // Type validation
       if (rules.type === 'string' && typeof value !== 'string') {
         errors.push(`${field} must be a string`);
-      } else if (rules.type === 'number' && typeof value !== 'number') {
-        errors.push(`${field} must be a number`);
+      } else if (rules.type === 'number') {
+        const num = Number(value);
+        if (isNaN(num)) {
+          errors.push(`${field} must be a number`);
+        }
       } else if (rules.type === 'boolean' && typeof value !== 'boolean') {
         errors.push(`${field} must be a boolean`);
       } else if (rules.type === 'array' && !Array.isArray(value)) {
@@ -185,6 +188,7 @@ export function validateBody(schema) {
     }
     
     if (errors.length > 0) {
+      console.error(errors);
       return res.status(400).json({ 
         message: 'Validation failed', 
         errors 

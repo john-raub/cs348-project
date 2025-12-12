@@ -19,9 +19,9 @@ dotenv.config();
 const app = express();
 
 //Mongoose security settings
-mongoose.set('strict', true);
-mongoose.set('strictQuery', true);
-mongoose.set('sanitizeFilter', true);
+mongoose.set('strict', true); // prevents adding of new fields to documents
+// mongoose.set('strictQuery', true); caused issues by imposing too many constraints limiting intended queries
+// mongoose.set('sanitizeFilter', true); same as above
 
 // Middleware
 app.use(cors());

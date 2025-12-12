@@ -6,5 +6,7 @@ const studySchema = new mongoose.Schema({
   session: { type: mongoose.Schema.Types.ObjectId, ref: "StudySession", required: true }
 });
 
+studySchema.index({session: 1});
+
 const Study = mongoose.model("Study", studySchema);
 export default Study;

@@ -19,5 +19,7 @@ studySessionSchema.pre("findOneAndDelete", async function (next) {
   next();
 });
 
+studySessionSchema.index({ user: 1, datetime: 1 });
+
 const StudySession = mongoose.model("StudySession", studySessionSchema);
 export default StudySession;

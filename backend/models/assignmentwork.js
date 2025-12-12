@@ -5,5 +5,7 @@ const assignmentWorkSchema = new mongoose.Schema({
   time: { type: Number, required: true } // time spent on that assignment during that session
 });
 
+assignmentWorkSchema.index({ session: 1, assignment: 1 });
+
 const AssignmentWork = mongoose.model("AssignmentWork", assignmentWorkSchema);
 export default AssignmentWork;
