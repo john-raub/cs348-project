@@ -1,38 +1,51 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import User from "../models/user.js";
 import { sanitizeString } from "../middleware/sanitize.js";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
 // Register
 router.post("/register", async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { username, password, startYear, school } = req.body;
 
     // Check if user exists
-    const existingUser = await User.findOne({ username: sanitizeString(username, 50) });
-    if (existingUser) return res.status(400).json({ error: "Username already exists" });
+    const existingUser = await User.findOne({ username: sanitizeString(username, 50) }).session(session);
+    if (existingUser) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: "Username already exists" });
+    }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
     const newUser = new User({ username: sanitizeString(username, 50), password: hashedPassword, startYear, school });
-    await newUser.save();
+    await newUser.save({ session });
 
     // JWT
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "2h" });
     res.json({ token });
+    await session.commitTransaction();
   } catch (err) {
     console.error("Register error:", err);
+    await session.abortTransaction();
     res.status(500).json({ error: "Registration failed" });
+  }
+  finally {
+    await session.endSession();
   }
 });
 
 // Login
 router.post("/login", async (req, res) => {
+  //no need for transaction because only one read from one document which mongo already guarantees atomicity of
   try {
     const { username, password } = req.body;
 
@@ -52,6 +65,7 @@ router.post("/login", async (req, res) => {
 
 //verify
 router.get("/verify", (req, res) => {
+  //no transaction because all middleware no db operations
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ message: "Missing token" });

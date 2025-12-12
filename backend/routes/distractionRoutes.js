@@ -125,28 +125,37 @@ router.get('/getDistractions/:sessionId',
   auth,
   validateParamId('sessionId'),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { sessionId } = req.params;
       const userId = req.user.id;
       const userObjectId = toObjectId(userId, 'userId');
 
       // Verify the session belongs to the user
-      const session = await StudySession.findOne({
+      const studysession = await StudySession.findOne({
         _id: sessionId,
         user: userObjectId
-      });
+      }).session(session);
 
-      if (!session) {
+      if (!studysession) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ 
           message: "Study session not found or you don't have permission to view it" 
         });
       }
 
-      const distractions = await Distraction.find({ session: sessionId });
+      const distractions = await Distraction.find({ session: sessionId }).session(session);
       res.json(distractions);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error('Error fetching distractions:', error);
       res.status(500).json({ message: 'Internal server error' });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -160,6 +169,8 @@ router.get('/getDistractions/:sessionId',
 router.get('/getUserDistractionTypes', 
   auth, 
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const userId = req.user.id;
       const userObjectId = toObjectId(userId, 'userId');
@@ -177,12 +188,17 @@ router.get('/getUserDistractionTypes',
         { $match: { 'session.user': userObjectId } },
         { $group: { _id: '$type' } }, // group by distinct type field
         { $project: { _id: 0, type: '$_id' } } // rename _id -> type
-      ]);
+      ]).session(session);
 
       res.json(types.map(t => t.type));
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error('Error fetching distinct distraction types:', error);
       res.status(500).json({ message: 'Internal server error' });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -237,6 +253,8 @@ router.post('/create',
     }
   }),
   async (req, res) => {
+    const sessiont = await mongoose.startSession();
+    sessiont.startTransaction();
     try {
       const { session, type, timeTaken } = req.body;
       const userId = req.user.id;
@@ -246,9 +264,11 @@ router.post('/create',
       const studySession = await StudySession.findOne({
         _id: session,
         user: userObjectId
-      });
+      }).session(sessiont);
 
       if (!studySession) {
+        await sessiont.abortTransaction();
+        await sessiont.endSession();
         return res.status(404).json({ 
           message: "Study session not found or you don't have permission to add distractions to it" 
         });
@@ -260,11 +280,16 @@ router.post('/create',
         timeTaken: timeTaken
       });
 
-      await newDistraction.save();
+      await newDistraction.save({ session: sessiont });
       res.status(201).json(newDistraction);
+      await sessiont.commitTransaction();
     } catch (error) {
+      await sessiont.abortTransaction();
       console.error('Error creating distraction:', error);
       res.status(500).json({ message: 'Internal server error' });
+    }
+    finally {
+      await sessiont.endSession();
     }
   }
 );
@@ -309,6 +334,8 @@ router.put('/update/:id',
     }
   }),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { id } = req.params;
       const { type, timeTaken } = req.body;
@@ -316,14 +343,18 @@ router.put('/update/:id',
       const userObjectId = toObjectId(userId, 'userId');
 
       // Find the distraction entry
-      const foundDistraction = await Distraction.findById(id).populate('session');
+      const foundDistraction = await Distraction.findById(id).session(session).populate('session');
 
       if (!foundDistraction) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ message: 'Distraction entry not found' });
       }
 
       // Verify the session belongs to the user
       if (!foundDistraction.session || foundDistraction.session.user.toString() !== userObjectId.toString()) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(403).json({ 
           message: "You don't have permission to update this distraction entry" 
         });
@@ -338,11 +369,16 @@ router.put('/update/:id',
         foundDistraction.timeTaken = Number(timeTaken);
       }
 
-      const updatedDistraction = await foundDistraction.save();
+      const updatedDistraction = await foundDistraction.save({ session });
       res.json(updatedDistraction);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error('Error updating distraction:', error);
       res.status(500).json({ message: 'Internal server error' });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -356,32 +392,43 @@ router.delete('/delete/:id',
   auth,
   validateParamId('id'),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { id } = req.params;
       const userId = req.user.id;
       const userObjectId = toObjectId(userId, 'userId');
 
       // Find the distraction entry first to verify ownership
-      const distraction = await Distraction.findById(id).populate('session');
+      const distraction = await Distraction.findById(id).session(session).populate('session');
 
       if (!distraction) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ message: 'Distraction entry not found' });
       }
 
       // Verify the session belongs to the user
       if (!distraction.session || distraction.session.user.toString() !== userObjectId.toString()) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(403).json({ 
           message: "You don't have permission to delete this distraction entry" 
         });
       }
 
       // Delete the distraction entry
-      await Distraction.findByIdAndDelete(id);
+      await Distraction.findByIdAndDelete(id).session(session);
+      await session.commitTransaction();
       
       res.status(204).send();
     } catch (error) {
+      await session.abortTransaction();
       console.error('Error deleting distraction:', error);
       res.status(500).json({ message: 'Internal server error' });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );

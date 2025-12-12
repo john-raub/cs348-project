@@ -2,7 +2,7 @@ import express from "express";
 import auth from "../middleware/auth.js";
 import Assignment from "../models/assignment.js";
 import Class from "../models/class.js";
-import User from "../models/User.js";
+import User from "../models/user.js";
 import Semester from "../models/semester.js";
 import { sanitizeString } from "../middleware/sanitize.js";
 import { 
@@ -10,6 +10,7 @@ import {
   validateBody,
   toObjectId 
 } from "../middleware/validators.js";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
@@ -22,20 +23,29 @@ router.get("/getAssignments/:classId",
   auth, 
   validateParamId('classId'),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { classId } = req.params;
 
       // Verify that the class exists
-      const classExists = await Class.findOne({ _id: classId });
+      const classExists = await Class.findOne({ _id: classId }).session(session);
       if (!classExists) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ message: "Class not found" });
       }
 
-      const assignments = await Assignment.find({ class: classId });
+      const assignments = await Assignment.find({ class: classId }).session(session);
       res.json(assignments);
+      await session.commitTransaction();
     } catch (error) {
       console.error("Error fetching assignments:", error);
+      await session.abortTransaction();
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -48,6 +58,8 @@ router.get("/getAssignments/:classId",
 router.get("/getUserAssignments", 
   auth, 
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const userId = req.user.id;
       
@@ -55,16 +67,20 @@ router.get("/getUserAssignments",
       const userObjectId = toObjectId(userId, 'userId');
       
       // Get all semesters for this user
-      const semesters = await Semester.find({ user: userObjectId });
+      const semesters = await Semester.find({ user: userObjectId }).session(session);
       
       if (semesters.length === 0) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.json([]);
       }
       
       // Get all classes for these semesters
-      const classes = await Class.find({ semester: { $in: semesters.map(s => s._id) } });
+      const classes = await Class.find({ semester: { $in: semesters.map(s => s._id) } }).session(session);
       
       if (classes.length === 0) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.json([]);
       }
       
@@ -73,12 +89,17 @@ router.get("/getUserAssignments",
       // Get all assignments for these classes
       const assignments = await Assignment.find({ 
         class: { $in: classIds } 
-      }).populate('class');
+      }).session(session).populate('class');
       
       res.json(assignments);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error fetching user assignments:", error);
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -103,12 +124,16 @@ router.post("/createAssignment",
     }
   }),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { classId, title } = req.body;
 
       // Verify that the class exists
-      const classExists = await Class.findOne({ _id: classId });
+      const classExists = await Class.findOne({ _id: classId }).session(session);
       if (!classExists) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ message: "Class not found" });
       }
 
@@ -118,11 +143,16 @@ router.post("/createAssignment",
         class: classId 
       });
       
-      await newAssignment.save();
+      await newAssignment.save({session: session});
       res.status(201).json(newAssignment);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error creating assignment:", error);
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -144,6 +174,8 @@ router.put("/updateAssignment/:id",
     }
   }),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { id } = req.params;
       const { title } = req.body;
@@ -154,20 +186,27 @@ router.put("/updateAssignment/:id",
       }
 
       // Find the assignment
-      const assignment = await Assignment.findById(id);
+      const assignment = await Assignment.findById(id).session(session);
       
       if (!assignment) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ message: "Assignment not found" });
       }
 
       // Update the assignment
       assignment.title = sanitizeString(title, 100);
-      const updated = await assignment.save();
+      const updated = await assignment.save({session: session});
 
       res.json(updated);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error updating assignment:", error);
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -181,6 +220,7 @@ router.delete("/deleteAssignment/:id",
   auth,
   validateParamId('id'),
   async (req, res) => {
+    //no need for transactions, one write to one document which mongo already protects
     try {
       const { id } = req.params;
 

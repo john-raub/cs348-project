@@ -101,6 +101,7 @@ import {
   validateBody,
   toObjectId 
 } from "../middleware/validators.js";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
@@ -116,6 +117,8 @@ router.get("/getClasses/:semesterId",
   auth,
   validateParamId('semesterId'),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { semesterId } = req.params;
       const userId = req.user.id;
@@ -125,19 +128,26 @@ router.get("/getClasses/:semesterId",
       const semester = await Semester.findOne({
         _id: semesterId,
         user: userObjectId
-      });
+      }).session(session);
 
       if (!semester) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ 
           message: "Semester not found or you don't have permission to view it" 
         });
       }
 
-      const classes = await Class.find({ semester: semesterId });
+      const classes = await Class.find({ semester: semesterId }).session(session);
       res.json(classes);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error fetching classes:", error);
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -150,14 +160,18 @@ router.get("/getClasses/:semesterId",
 router.get("/getUserClasses", 
   auth, 
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const userId = req.user.id;
       const userObjectId = toObjectId(userId, 'userId');
 
       // Get all user's semesters
-      const semesters = await Semester.find({ user: userObjectId });
+      const semesters = await Semester.find({ user: userObjectId }).session(session);
       
       if (semesters.length === 0) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.json([]);
       }
 
@@ -166,12 +180,17 @@ router.get("/getUserClasses",
       // Get all classes for those semesters
       const classes = await Class.find({ 
         semester: { $in: semesterIds } 
-      });
+      }).session(session);
       
       res.json(classes);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error fetching user classes:", error);
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -226,6 +245,8 @@ router.post("/createClass",
     }
   }),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { classId, professor, grade, semesterId } = req.body;
       const userId = req.user.id;
@@ -235,9 +256,11 @@ router.post("/createClass",
       const semester = await Semester.findOne({
         _id: semesterId,
         user: userObjectId
-      });
+      }).session(session);
 
       if (!semester) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ 
           message: "Semester not found or you don't have permission to add classes to it" 
         });
@@ -247,9 +270,11 @@ router.post("/createClass",
       const existingClass = await Class.findOne({
         semester: semesterId,
         classId: sanitizeString(classId, 50)
-      });
+      }).session(session);
 
       if (existingClass) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(400).json({ 
           message: `Class ${classId} already exists in this semester` 
         });
@@ -264,11 +289,16 @@ router.post("/createClass",
         semester: semesterId,
       });
 
-      const saved = await newClass.save();
+      const saved = await newClass.save({ session });
       res.status(201).json(saved);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error creating class:", error);
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -303,6 +333,8 @@ router.put("/updateClass/:id",
     }
   }),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const userId = req.user.id;
       const { id } = req.params;
@@ -311,14 +343,18 @@ router.put("/updateClass/:id",
       const userObjectId = toObjectId(userId, 'userId');
 
       // Find the class and verify ownership through semester
-      const foundClass = await Class.findById(id).populate('semester');
+      const foundClass = await Class.findById(id).populate('semester').session(session);
       
       if (!foundClass) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ message: "Class not found" });
       }
 
       // Verify the semester belongs to the user
       if (!foundClass.semester || foundClass.semester.user.toString() !== userObjectId.toString()) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(403).json({ 
           message: "You don't have permission to update this class" 
         });
@@ -337,11 +373,16 @@ router.put("/updateClass/:id",
         foundClass.grade = sanitizeString(grade, 50);
       }
 
-      const updated = await foundClass.save();
+      const updated = await foundClass.save({ session });
       res.json(updated);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error updating class:", error);
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -357,6 +398,8 @@ router.delete("/deleteClass/:id",
   auth,
   validateParamId('id'),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { id } = req.params;
       const userId = req.user.id;
@@ -365,26 +408,35 @@ router.delete("/deleteClass/:id",
       console.log("Deleting class with id:", id);
 
       // Find the class first to verify ownership
-      const foundClass = await Class.findById(id).populate('semester');
+      const foundClass = await Class.findById(id).populate('semester').session(session);
       
       if (!foundClass) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ message: "Class not found" });
       }
 
       // Verify the semester belongs to the user
       if (!foundClass.semester || foundClass.semester.user.toString() !== userObjectId.toString()) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(403).json({ 
           message: "You don't have permission to delete this class" 
         });
       }
 
       // Delete the class
-      const deleted = await Class.findByIdAndDelete(id);
+      const deleted = await Class.findByIdAndDelete(id).session(session);
 
       res.json({ message: "Class deleted" });
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error deleting class:", error);
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );

@@ -5,7 +5,7 @@ const distractionSchema = new mongoose.Schema({
   session: { type: mongoose.Schema.Types.ObjectId, ref: "StudySession", required: true }
 });
 
-distractionSchema.index({session: 1});
+distractionSchema.index({session: "hashed"});
 distractionSchema.index({type: 1});
 
 const Distraction = mongoose.model("Distraction", distractionSchema);

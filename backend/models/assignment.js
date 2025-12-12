@@ -14,7 +14,7 @@ assignmentSchema.pre("findOneAndDelete", async function (next) {
   next();
 });
 
-assignmentSchema.index({class:1});
+assignmentSchema.index({class: "hashed"});
 
 const Assignment = mongoose.model("Assignment", assignmentSchema);
 export default Assignment;

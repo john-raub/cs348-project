@@ -448,6 +448,7 @@ router.post("/getFilteredRecords",
   }),
   validateDateRange('startDate', 'endDate'),
   async (req, res) => {
+    const session = await mongoose.startSession();
     try {
       const userId = req.user.id;
       console.log("User ID from auth middleware:", userId);
@@ -843,18 +844,23 @@ router.post("/getFilteredRecords",
           }
         }
       ];
-
+      session.startTransaction();
       // Execute the aggregation
-      const records = await StudySession.aggregate(pipeline);
+      const records = await StudySession.aggregate(pipeline).session(session);
       console.log("Aggregation completed successfully");
+      await session.commitTransaction();
 
       res.status(200).json(records);
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error fetching filtered records:", error);
       res.status(500).json({ 
         message: "Server error", 
         error: process.env.NODE_ENV === 'development' ? error.message : undefined 
       });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );

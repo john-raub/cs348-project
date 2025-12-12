@@ -7,6 +7,7 @@ import {
   validateBody,
   toObjectId 
 } from "../middleware/validators.js";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
@@ -18,6 +19,7 @@ const router = express.Router();
 router.get("/getUserSemesters", 
   auth, 
   async (req, res) => {
+    //no transaction needed for one read from one collection
     try {
       const userId = req.user.id;
       
@@ -58,6 +60,8 @@ router.post("/create",
     }
   }),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const userId = req.user.id;
       const { season, year } = req.body;
@@ -70,9 +74,11 @@ router.post("/create",
         user: userObjectId, 
         season: season, 
         year: year 
-      });
+      }).session(session);
       
       if (existing) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(400).json({ 
           message: `${season} ${year} semester already exists` 
         });
@@ -85,11 +91,16 @@ router.post("/create",
         user: userObjectId,
       });
 
-      await newSemester.save();
+      await newSemester.save({ session });
       res.status(201).json(newSemester);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error creating semester:", error);
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );

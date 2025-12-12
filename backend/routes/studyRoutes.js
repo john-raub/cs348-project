@@ -81,6 +81,7 @@ import {
   validateBody,
   toObjectId 
 } from "../middleware/validators.js";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
@@ -94,30 +95,40 @@ router.get("/getStudies/:sessionId",
   auth,
   validateParamId('sessionId'),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { sessionId } = req.params;
       const userId = req.user.id;
       const userObjectId = toObjectId(userId, 'userId');
 
       // Verify the session belongs to the user
-      const session = await StudySession.findOne({
+      const studySession = await StudySession.findOne({
         _id: sessionId,
         user: userObjectId
-      });
+      }).session(session);
 
-      if (!session) {
+      if (!studySession) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ 
           message: "Study session not found or you don't have permission to view it" 
         });
       }
 
-      const studies = await Study.find({ session: sessionId });
+      const studies = await Study.find({ session: sessionId }).session(session);
       console.log("Fetched studies:", studies);
+      
+      await session.commitTransaction();
       
       res.json(studies);
     } catch (err) {
+      await session.abortTransaction();
       console.error("Error fetching studies:", err);
       res.status(500).json({ error: "Internal server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -174,6 +185,8 @@ router.post("/create",
     }
   }),
   async (req, res) => {
+    const sessiont = await mongoose.startSession();
+    sessiont.startTransaction();
     try {
       const { session, what, understanding, time } = req.body;
       const userId = req.user.id;
@@ -183,9 +196,11 @@ router.post("/create",
       const studySession = await StudySession.findOne({
         _id: session,
         user: userObjectId
-      });
+      }).session(sessiont);
 
       if (!studySession) {
+        await sessiont.abortTransaction();
+        await sessiont.endSession();
         return res.status(404).json({ 
           message: "Study session not found or you don't have permission to add entries to it" 
         });
@@ -198,11 +213,16 @@ router.post("/create",
         time: time
       });
 
-      await newStudy.save();
+      await newStudy.save({ session: sessiont });
       res.status(201).json(newStudy);
+      await sessiont.commitTransaction();
     } catch (err) {
+      await sessiont.abortTransaction();
       console.error("Error creating study:", err);
       res.status(500).json({ error: "Internal server error" });
+    }
+    finally {
+      await sessiont.endSession();
     }
   }
 );
@@ -240,6 +260,8 @@ router.put("/update/:id",
     }
   }),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { id } = req.params;
       const { what, understanding, time } = req.body;
@@ -247,14 +269,18 @@ router.put("/update/:id",
       const userObjectId = toObjectId(userId, 'userId');
 
       // Find the study entry
-      const updatedStudy = await Study.findById(id).populate('session');
+      const updatedStudy = await Study.findById(id).session(session).populate('session');
 
       if (!updatedStudy) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ error: "Study entry not found" });
       }
 
       // Verify the session belongs to the user
       if (!updatedStudy.session || updatedStudy.session.user.toString() !== userObjectId.toString()) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(403).json({ 
           error: "You don't have permission to update this study entry" 
         });
@@ -273,11 +299,16 @@ router.put("/update/:id",
         updatedStudy.time = Number(time);
       }
 
-      await updatedStudy.save();
+      await updatedStudy.save({ session });
       res.json(updatedStudy);
+      await session.commitTransaction();
     } catch (err) {
+      await session.abortTransaction();
       console.error("Error updating study:", err);
       res.status(500).json({ error: "Internal server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -291,32 +322,43 @@ router.delete("/delete/:id",
   auth,
   validateParamId('id'),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { id } = req.params;
       const userId = req.user.id;
       const userObjectId = toObjectId(userId, 'userId');
 
       // Find the study entry first to verify ownership
-      const study = await Study.findById(id).populate('session');
+      const study = await Study.findById(id).session(session).populate('session');
 
       if (!study) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ error: "Study entry not found" });
       }
 
       // Verify the session belongs to the user
       if (!study.session || study.session.user.toString() !== userObjectId.toString()) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(403).json({ 
           error: "You don't have permission to delete this study entry" 
         });
       }
 
       // Delete the study entry
-      await Study.findByIdAndDelete(id);
+      await Study.findByIdAndDelete(id).session(session);
       
       res.status(204).send();
+      await session.commitTransaction();
     } catch (err) {
+      await session.abortTransaction();
       console.error("Error deleting study:", err);
       res.status(500).json({ error: "Internal server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );

@@ -40,11 +40,12 @@
 import express from "express";
 import auth from "../middleware/auth.js";
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import User from "../models/user.js";
 import { 
   validateBody,
   toObjectId 
 } from "../middleware/validators.js";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
@@ -56,6 +57,7 @@ const router = express.Router();
 router.get("/me", 
   auth, 
   async (req, res) => {
+    //no need for transaction, just one read on one collection
     try {
       const userId = req.user.id;
       const userObjectId = toObjectId(userId, 'userId');
@@ -134,6 +136,7 @@ router.put("/me",
     }
   }),
   async (req, res) => {
+    //no need for transaction, just one update on one collection
     try {
       const { startYear, school } = req.body;
       const userId = req.user.id;

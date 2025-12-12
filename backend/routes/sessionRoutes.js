@@ -7,6 +7,7 @@ import {
   validateBody,
   toObjectId 
 } from "../middleware/validators.js";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
@@ -18,6 +19,7 @@ const router = express.Router();
 router.get("/getUserSessions", 
   auth, 
   async (req, res) => {
+    //no need for transaction, just one read from one collection
     try {
       const userId = req.user.id;
       
@@ -66,6 +68,7 @@ router.post("/createSession",
     }
   }),
   async (req, res) => {
+    //no transaction as only one write to one collection
     try {
       const userId = req.user.id;
       const { title, datetime } = req.body;
@@ -123,6 +126,8 @@ router.put("/updateSession/:id",
     }
   }),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { id } = req.params;
       const { title, datetime } = req.body;
@@ -135,9 +140,11 @@ router.put("/updateSession/:id",
       const foundSession = await StudySession.findOne({
         _id: id,
         user: userObjectId
-      });
+      }).session(session);
 
       if (!foundSession) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ 
           message: "Study session not found or you don't have permission to edit it" 
         });
@@ -152,11 +159,16 @@ router.put("/updateSession/:id",
         foundSession.datetime = new Date(datetime);
       }
 
-      const updatedSession = await foundSession.save();
+      const updatedSession = await foundSession.save({ session });
       res.json(updatedSession);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error updating study session:", error);
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -170,6 +182,7 @@ router.delete("/deleteSession/:id",
   auth,
   validateParamId('id'),
   async (req, res) => {
+    //no transaction as only one delete operation on one collection
     try {
       const { id } = req.params;
       const userId = req.user.id;

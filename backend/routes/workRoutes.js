@@ -83,6 +83,7 @@ import {
   validateBody,
   toObjectId 
 } from "../middleware/validators.js";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
@@ -96,30 +97,39 @@ router.get("/getSessionWorks/:sessionId",
   auth,
   validateParamId('sessionId'),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { sessionId } = req.params;
       const userId = req.user.id;
       const userObjectId = toObjectId(userId, 'userId');
 
       // Verify the session belongs to the user
-      const session = await StudySession.findOne({
+      const studysession = await StudySession.findOne({
         _id: sessionId,
         user: userObjectId
-      });
+      }).session(session);
 
-      if (!session) {
+      if (!studysession) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ 
           message: "Study session not found or you don't have permission to view it" 
         });
       }
 
       const works = await AssignmentWork.find({ session: sessionId })
-        .populate("assignment");
+        .session(session).populate("assignment");
 
       res.json(works);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error fetching session works:", error);
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -162,18 +172,22 @@ router.post("/create",
     }
   }),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
       const { time, assignmentId, sessionId } = req.body;
       const userId = req.user.id;
       const userObjectId = toObjectId(userId, 'userId');
 
       // Verify the session belongs to the user
-      const session = await StudySession.findOne({
+      const studysession = await StudySession.findOne({
         _id: sessionId,
         user: userObjectId
-      });
+      }).session(session);
 
-      if (!session) {
+      if (!studysession) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ 
           message: "Study session not found or you don't have permission to add work to it" 
         });
@@ -181,7 +195,7 @@ router.post("/create",
 
       // Verify the assignment exists and belongs to the user's classes
       // We need to check through: Assignment -> Class -> Semester -> User
-      const assignment = await Assignment.findById(assignmentId)
+      const assignment = await Assignment.findById(assignmentId).session(session)
         .populate({
           path: 'class',
           populate: {
@@ -191,6 +205,8 @@ router.post("/create",
         });
 
       if (!assignment) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ 
           message: "Assignment not found" 
         });
@@ -200,6 +216,8 @@ router.post("/create",
       if (!assignment.class || 
           !assignment.class.semester || 
           assignment.class.semester.user.toString() !== userObjectId.toString()) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(403).json({ 
           message: "You don't have permission to log work for this assignment" 
         });
@@ -209,9 +227,11 @@ router.post("/create",
       const existingWork = await AssignmentWork.findOne({
         assignment: assignmentId,
         session: sessionId
-      });
+      }).session(session);
 
       if (existingWork) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(400).json({ 
           message: "Work entry for this assignment already exists in this session. Use update instead." 
         });
@@ -223,16 +243,21 @@ router.post("/create",
         session: sessionId,
       });
 
-      await assignmentWork.save();
+      await assignmentWork.save({ session });
       
       // Populate assignment details before returning
-      const populatedWork = await AssignmentWork.findById(assignmentWork._id)
+      const populatedWork = await AssignmentWork.findById(assignmentWork._id).session(session)
         .populate("assignment");
       
       res.status(201).json(populatedWork);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error creating session work:", error);
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
@@ -257,6 +282,9 @@ router.put("/update/:id",
     }
   }),
   async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
       const { id } = req.params;
       const { time } = req.body;
@@ -264,14 +292,18 @@ router.put("/update/:id",
       const userObjectId = toObjectId(userId, 'userId');
 
       // Find the work entry with populated session for ownership check
-      const work = await AssignmentWork.findById(id).populate('session');
+      const work = await AssignmentWork.findById(id).populate('session').session(session);
 
       if (!work) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(404).json({ message: "Work entry not found" });
       }
 
       // Verify the session belongs to the user
       if (!work.session || work.session.user.toString() !== userObjectId.toString()) {
+        await session.abortTransaction();
+        await session.endSession();
         return res.status(403).json({ 
           message: "You don't have permission to update this work entry" 
         });
@@ -279,16 +311,21 @@ router.put("/update/:id",
 
       // Update the time
       work.time = time;
-      const updated = await work.save();
+      const updated = await work.save({ session });
 
       // Populate assignment details before returning
-      const populatedWork = await AssignmentWork.findById(updated._id)
+      const populatedWork = await AssignmentWork.findById(updated._id).session(session)
         .populate("assignment");
 
       res.json(populatedWork);
+      await session.commitTransaction();
     } catch (error) {
+      await session.abortTransaction();
       console.error("Error updating session work:", error);
       res.status(500).json({ message: "Server error" });
+    }
+    finally {
+      await session.endSession();
     }
   }
 );
