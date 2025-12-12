@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./AuthPage.css";
 import { useNavigate } from "react-router-dom";
 
-
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,7 +21,7 @@ export default function AuthPage() {
     setError("");
 
     try {
-      const response = await fetch(`/api/auth/${isLogin ? "login" : "register"}`, {
+      const response = await fetch(`${API_URL}/api/auth/${isLogin ? "login" : "register"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -52,7 +52,7 @@ useEffect(() => {
 
   const checkToken = async () => {
     try {
-      const res = await fetch("/api/auth/verify", {
+      const res = await fetch(`${API_URL}/api/auth/verify`, {
         headers: { Authorization: `Bearer ${storedToken}` },
       });
       console.log("Token verification response:", res);

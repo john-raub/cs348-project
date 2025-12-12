@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import "./ProfilePage.css";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function ProfilePage() {
   const [profileData, setProfileData] = useState({
     username: "",
@@ -22,7 +24,7 @@ export default function ProfilePage() {
 
     const fetchProfile = async () => {
       try {
-        const response = await fetch("/api/user/me", {
+        const response = await fetch(`${API_URL}/api/user/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await response.json();
@@ -50,7 +52,7 @@ export default function ProfilePage() {
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/user/me", {
+      const response = await fetch(`${API_URL}/api/user/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

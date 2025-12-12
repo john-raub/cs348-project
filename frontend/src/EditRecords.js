@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function EditRecords() {
   const [userSemesters, setUserSemesters] = useState([]);
   const [selectedSemester, setSelectedSemester] = useState(null);
@@ -44,7 +46,7 @@ export default function EditRecords() {
   useEffect(() => {
     const fetchSemesters = async () => {
       try {
-        const res = await fetch("/api/semesters/getUserSemesters", {
+        const res = await fetch(`${API_URL}/api/semesters/getUserSemesters`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -65,7 +67,7 @@ export default function EditRecords() {
         return;
       }
       try {
-        const res = await fetch(`/api/classes/getClasses/${selectedSemester._id}`, {
+        const res = await fetch(`${API_URL}/api/classes/getClasses/${selectedSemester._id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -86,7 +88,7 @@ export default function EditRecords() {
         return;
       }
       try {
-        const res = await fetch(`/api/assignments/getAssignments/${selectedClass._id}`, {
+        const res = await fetch(`${API_URL}/api/assignments/getAssignments/${selectedClass._id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -103,7 +105,7 @@ export default function EditRecords() {
   useEffect(() => {
     const fetchSessions = async () => {
       try {
-        const res = await fetch(`/api/sessions/getUserSessions`, {
+        const res = await fetch(`${API_URL}/api/sessions/getUserSessions`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -124,7 +126,7 @@ export default function EditRecords() {
         return;
       }
       try {
-        const res = await fetch(`/api/works/getSessionWorks/${selectedSession._id}`, {
+        const res = await fetch(`${API_URL}/api/works/getSessionWorks/${selectedSession._id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -141,7 +143,7 @@ export default function EditRecords() {
   useEffect(() => {
     const fetchAllAssignments = async () => {
       try {
-        const res = await fetch(`/api/assignments/getUserAssignments`, {
+        const res = await fetch(`${API_URL}/api/assignments/getUserAssignments`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -163,7 +165,7 @@ export default function EditRecords() {
       }
 
       try {
-        const res = await fetch(`/api/study/getStudies/${selectedSession._id}`, {
+        const res = await fetch(`${API_URL}/api/study/getStudies/${selectedSession._id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -184,7 +186,7 @@ export default function EditRecords() {
         return;
       }
       try {
-        const res = await fetch(`/api/distractions/getDistractions/${selectedSession._id}`, {
+        const res = await fetch(`${API_URL}/api/distractions/getDistractions/${selectedSession._id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -242,7 +244,7 @@ export default function EditRecords() {
 
   const handleCreateSemester = async () => {
     try {
-      const res = await fetch("/api/semesters/create", {
+      const res = await fetch(`${API_URL}/api/semesters/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -260,7 +262,7 @@ export default function EditRecords() {
 
   const handleCreateClass = async () => {
     try {
-      const res = await fetch("/api/classes/createClass", {
+      const res = await fetch(`${API_URL}/api/classes/createClass`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -278,7 +280,7 @@ export default function EditRecords() {
 
   const handleCreateAssignment = async () => {
     try {
-      const res = await fetch("/api/assignments/createAssignment", {
+      const res = await fetch(`${API_URL}/api/assignments/createAssignment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -296,7 +298,7 @@ export default function EditRecords() {
 
     const handleCreateSession = async () => {
     try {
-      const res = await fetch("/api/sessions/createSession", {
+      const res = await fetch(`${API_URL}/api/sessions/createSession`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -314,7 +316,7 @@ export default function EditRecords() {
 
   const handleCreateWork = async () => {
     try {
-      const res = await fetch("/api/works/create", {
+      const res = await fetch(`${API_URL}/api/works/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -333,7 +335,7 @@ export default function EditRecords() {
         return;
       }
       try {
-        const res = await fetch(`/api/works/getSessionWorks/${selectedSession._id}`, {
+        const res = await fetch(`${API_URL}/api/works/getSessionWorks/${selectedSession._id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -347,7 +349,7 @@ export default function EditRecords() {
 
   const handleCreateStudy = async () => {
     try {
-      const res = await fetch("/api/study/create", {
+      const res = await fetch(`${API_URL}/api/study/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -365,7 +367,7 @@ export default function EditRecords() {
 
   const handleCreateDistraction = async () => {
     try {
-      const res = await fetch("/api/distractions/create", {
+      const res = await fetch(`${API_URL}/api/distractions/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -383,7 +385,7 @@ export default function EditRecords() {
 
   const handleDeleteSemester = async (id) => {
     try {
-      await fetch(`/api/semesters/delete/${id}`, {
+      await fetch(`${API_URL}/api/semesters/delete/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
@@ -396,7 +398,7 @@ export default function EditRecords() {
 
   const handleDeleteClass = async (id) => {
     try {
-      await fetch(`/api/classes/deleteClass/${id}`, {
+      await fetch(`${API_URL}/api/classes/deleteClass/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
@@ -409,7 +411,7 @@ export default function EditRecords() {
 
   const handleDeleteAssignment = async (id) => {
     try {
-      await fetch(`/api/assignments/deleteAssignment/${id}`, {  
+      await fetch(`${API_URL}/api/assignments/deleteAssignment/${id}`, {  
         method: "DELETE",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
@@ -422,7 +424,7 @@ export default function EditRecords() {
 
   const handleDeleteSession = async (id) => {
     try {
-      await fetch(`/api/sessions/deleteSession/${id}`, {
+      await fetch(`${API_URL}/api/sessions/deleteSession/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
@@ -435,7 +437,7 @@ export default function EditRecords() {
 
   const handleDeleteWork = async (id) => {
     try {
-      await fetch(`/api/works/delete/${id}`, {
+      await fetch(`${API_URL}/api/works/delete/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
@@ -448,7 +450,7 @@ export default function EditRecords() {
 
   const handleDeleteStudy = async (id) => {
     try {
-      await fetch(`/api/study/delete/${id}`, {
+      await fetch(`${API_URL}/api/study/delete/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
@@ -461,7 +463,7 @@ export default function EditRecords() {
 
   const handleDeleteDistraction = async (id) => {
     try {
-      await fetch(`/api/distractions/delete/${id}`, {
+      await fetch(`${API_URL}/api/distractions/delete/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
@@ -509,7 +511,7 @@ export default function EditRecords() {
 
   const handleSaveSemesterEdit = async (id) => {
     try {
-      const res = await fetch(`/api/semesters/updateSemester/${id}`, {
+      const res = await fetch(`${API_URL}/api/semesters/updateSemester/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -527,7 +529,7 @@ export default function EditRecords() {
 
   const handleSaveClassEdit = async (id) => {
     try {
-      const res = await fetch(`/api/classes/updateClass/${id}`, {
+      const res = await fetch(`${API_URL}/api/classes/updateClass/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -545,7 +547,7 @@ export default function EditRecords() {
 
   const handleSaveAssignmentEdit = async (id) => {
     try {
-      const res = await fetch(`/api/assignments/updateAssignment/${id}`, {
+      const res = await fetch(`${API_URL}/api/assignments/updateAssignment/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -563,7 +565,7 @@ export default function EditRecords() {
 
   const handleSaveSessionEdit = async (id) => {
     try {
-      const res = await fetch(`/api/sessions/updateSession/${id}`, {
+      const res = await fetch(`${API_URL}/api/sessions/updateSession/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -581,7 +583,7 @@ export default function EditRecords() {
 
   const handleSaveWorkEdit = async (id) => {
     try {
-      const res = await fetch(`/api/works/update/${id}`, {
+      const res = await fetch(`${API_URL}/api/works/update/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -600,7 +602,7 @@ export default function EditRecords() {
         return;
       }
       try {
-        const res = await fetch(`/api/works/getSessionWorks/${selectedSession._id}`, {
+        const res = await fetch(`${API_URL}/api/works/getSessionWorks/${selectedSession._id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -614,7 +616,7 @@ export default function EditRecords() {
 
   const handleSaveStudyEdit = async (id) => {
     try {
-      const res = await fetch(`/api/study/update/${id}`, {
+      const res = await fetch(`${API_URL}/api/study/update/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -632,7 +634,7 @@ export default function EditRecords() {
 
   const handleSaveDistractionEdit = async (id) => {
     try {
-      const res = await fetch(`/api/distractions/update/${id}`, {
+      const res = await fetch(`${API_URL}/api/distractions/update/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

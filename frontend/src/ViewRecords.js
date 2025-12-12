@@ -13,6 +13,7 @@ import {
   Legend,
 } from "recharts";
 
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function ViewRecords() {
   const [allUserClasses, setAllUserClasses] = useState([]);
@@ -34,7 +35,7 @@ export default function ViewRecords() {
     try {
         const fetchUserClasses = async () => {
             const token = localStorage.getItem("token");
-            const response = await fetch("/api/classes/getUserClasses", {
+            const response = await fetch(`${API_URL}/api/classes/getUserClasses`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const data = await response.json();
@@ -43,7 +44,7 @@ export default function ViewRecords() {
         };
         const fetchUserAssignments = async () => {
             const token = localStorage.getItem("token");
-            const response = await fetch("/api/assignments/getUserAssignments", {
+            const response = await fetch(`${API_URL}/api/assignments/getUserAssignments`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const data = await response.json();
@@ -52,7 +53,7 @@ export default function ViewRecords() {
         };
         const fetchUserDistractionTypes = async () => {
             const token = localStorage.getItem("token");
-            const response = await fetch("/api/distractions/getUserDistractionTypes", {
+            const response = await fetch(`${API_URL}/api/distractions/getUserDistractionTypes`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const data = await response.json();
@@ -119,7 +120,7 @@ export default function ViewRecords() {
     console.log("Sending filters:", filters);
     const sendFilters = async () => {
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/records/getFilteredRecords", {
+      const response = await fetch(`${API_URL}/api/records/getFilteredRecords`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
